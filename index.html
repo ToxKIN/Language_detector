@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Определитель языка текста</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #4a5568;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .input-group {
+            margin-bottom: 30px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 1.1em;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 15px;
+            font-size: 16px;
+            resize: vertical;
+            transition: all 0.3s;
+            background: #f8fafc;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+        
+        .button-group {
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        button {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        button:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .result {
+            margin-top: 40px;
+            padding: 30px;
+            background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+            border-radius: 15px;
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .result.show {
+            display: block;
+        }
+        
+        .result h3 {
+            color: #2d3748;
+            margin-top: 0;
+            font-size: 1.5em;
+        }
+        
+        .language-info {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .language-flag {
+            font-size: 40px;
+            margin-right: 15px;
+            vertical-align: middle;
+        }
+        
+        .confidence-bar {
+            height: 25px;
+            background: #e2e8f0;
+            border-radius: 12px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+        
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #48bb78, #38a169);
+            border-radius: 12px;
+            transition: width 1s ease-in-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .feature-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        
+        .feature-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+            margin: 10px 0;
+        }
+        
+        .loader {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            background: #fed7d7;
+            color: #9b2c2c;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .error.show {
+            display: block;
+        }
+        
+        .api-status {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .status-online {
+            color: #38a169;
+        }
+        
+        .status-offline {
+            color: #e53e3e;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #718096;
+            font-size: 14px;
+        }
+        
+        .examples {
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        
+        .example-btn {
+            background: #e2e8f0;
+            border: none;
+            padding: 5px 15px;
+            margin: 5px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .example-btn:hover {
+            background: #cbd5e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌍 Определитель языка текста</h1>
+        
+        <div class="api-status">
+            <span id="status">Проверка подключения...</span>
+        </div>
+        
+        <div class="input-group">
+            <label for="textInput">Введите текст для определения языка:</label>
+            <textarea 
+                id="textInput" 
+                placeholder="Введите или вставьте текст на любом языке... Пример: Hello world! Bonjour tout le monde! ¡Hola mundo! Привет мир!"
+                rows="6"
+            ></textarea>
+            
+            <div class="examples">
+                <small>Примеры:</small><br>
+                <button class="example-btn" onclick="setExample('english')">English</button>
+                <button class="example-btn" onclick="setExample('russian')">Русский</button>
+                <button class="example-btn" onclick="setExample('spanish')">Español</button>
+                <button class="example-btn" onclick="setExample('french')">Français</button>
+                <button class="example-btn" onclick="setExample('german')">Deutsch</button>
+            </div>
+        </div>
+        
+        <div class="button-group">
+            <button id="detectBtn" onclick="detectLanguage()">Определить язык</button>
+        </div>
+        
+        <div class="loader" id="loader">
+            <div class="spinner"></div>
+            <p>Анализируем текст...</p>
+        </div>
+        
+        <div class="error" id="error">
+            <strong>Ошибка:</strong> <span id="errorMessage"></span>
+        </div>
+        
+        <div class="result" id="result">
+            <h3>📊 Результат анализа:</h3>
+            <div class="language-info">
+                <div style="display: flex; align-items: center;">
+                    <span id="languageFlag" class="language-flag">🌐</span>
+                    <div>
+                        <h2 id="languageName" style="margin: 0;">Неизвестный язык</h2>
+                        <p id="languageCode" style="margin: 5px 0; color: #718096;">Код: --</p>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <p><strong>Уверенность модели:</strong></p>
+                    <div class="confidence-bar">
+                        <div id="confidenceFill" class="confidence-fill" style="width: 0%;">
+                            <span id="confidenceText">0%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="features">
+                    <div class="feature-card">
+                        <div>📝 Длина текста</div>
+                        <div id="textLength" class="feature-value">0</div>
+                        <div>символов</div>
+                    </div>
+                    <div class="feature-card">
+                        <div>📚 Количество слов</div>
+                        <div id="wordCount" class="feature-value">0</div>
+                        <div>слов</div>
+                    </div>
+                    <div class="feature-card">
+                        <div>🔤 Уникальные символы</div>
+                        <div id="uniqueChars" class="feature-value">0</div>
+                        <div>символов</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>Сервис определения языка текста | Поддерживает 17 языков</p>
+            <p>Модель машинного обучения на основе Random Forest</p>
+            <p>API: <code id="apiUrl">http://localhost:8000/api/v1/predict</code></p>
+        </footer>
+    </div>
+
+    <script>
+        // Примеры текстов
+        const examples = {
+            english: "Hello world! This is an example text in English language. Machine learning is fascinating!",
+            russian: "Привет, мир! Это пример текста на русском языке. Машинное обучение - это увлекательно!",
+            spanish: "¡Hola mundo! Este es un texto de ejemplo en español. ¡El aprendizaje automático es fascinante!",
+            french: "Bonjour tout le monde! Ceci est un exemple de texte en français. L'apprentissage automatique est fascinant!",
+            german: "Hallo Welt! Dies ist ein Beispieltext auf Deutsch. Maschinelles Lernen ist faszinierend!"
+        };
+        
+        // Карта эмодзи для языков
+        const flagEmojis = {
+            'en': '🇺🇸', 'us': '🇺🇸', 'english': '🇺🇸',
+            'ru': '🇷🇺', 'russian': '🇷🇺',
+            'es': '🇪🇸', 'spanish': '🇪🇸',
+            'fr': '🇫🇷', 'french': '🇫🇷',
+            'de': '🇩🇪', 'german': '🇩🇪',
+            'zh': '🇨🇳', 'chinese': '🇨🇳',
+            'ar': '🇸🇦', 'arabic': '🇸🇦',
+            'hi': '🇮🇳', 'hindi': '🇮🇳',
+            'pt': '🇵🇹', 'portuguese': '🇵🇹',
+            'it': '🇮🇹', 'italian': '🇮🇹',
+            'ja': '🇯🇵', 'japanese': '🇯🇵',
+            'ko': '🇰🇷', 'korean': '🇰🇷'
+        };
+        
+        // URL вашего API
+        const API_URL = 'http://localhost:8000/api/v1/predict';
+        
+        // Проверка подключения к API при загрузке
+        window.onload = function() {
+            checkAPIStatus();
+        };
+        
+        // Проверка статуса API
+        async function checkAPIStatus() {
+            const statusElement = document.getElementById('status');
+            try {
+                const response = await fetch('http://localhost:8000/health');
+                if (response.ok) {
+                    statusElement.innerHTML = '<span class="status-online">✅ API доступен</span>';
+                    statusElement.innerHTML += '<br><small>Сервис готов к работе</small>';
+                } else {
+                    throw new Error('API не отвечает');
+                }
+            } catch (error) {
+                statusElement.innerHTML = '<span class="status-offline">❌ API недоступен</span>';
+                statusElement.innerHTML += '<br><small>Убедитесь, что сервер запущен на localhost:8000</small>';
+                console.error('Ошибка подключения к API:', error);
+            }
+        }
+        
+        // Установить пример текста
+        function setExample(lang) {
+            document.getElementById('textInput').value = examples[lang];
+        }
+        
+        // Определить язык текста
+        async function detectLanguage() {
+            const textInput = document.getElementById('textInput');
+            const detectBtn = document.getElementById('detectBtn');
+            const loader = document.getElementById('loader');
+            const errorDiv = document.getElementById('error');
+            const resultDiv = document.getElementById('result');
+            
+            const text = textInput.value.trim();
+            
+            // Валидация
+            if (text.length < 3) {
+                showError('Пожалуйста, введите текст длиной не менее 3 символов');
+                return;
+            }
+            
+            // Показать загрузку
+            detectBtn.disabled = true;
+            loader.style.display = 'block';
+            errorDiv.classList.remove('show');
+            resultDiv.classList.remove('show');
+            
+            try {
+                // Отправка запроса к API
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ text: text })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Ошибка API: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                // Обновление интерфейса с результатами
+                updateResults(data);
+                
+                // Показать результат
+                resultDiv.classList.add('show');
+                
+            } catch (error) {
+                console.error('Ошибка:', error);
+                showError(`Не удалось определить язык: ${error.message}`);
+            } finally {
+                // Скрыть загрузку
+                detectBtn.disabled = false;
+                loader.style.display = 'none';
+            }
+        }
+        
+        // Показать ошибку
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            errorMessage.textContent = message;
+            errorDiv.classList.add('show');
+            
+            // Автоматическое скрытие через 5 секунд
+            setTimeout(() => {
+                errorDiv.classList.remove('show');
+            }, 5000);
+        }
+        
+        // Обновить результаты на странице
+        function updateResults(data) {
+            // Язык
+            document.getElementById('languageName').textContent = data.language || 'Неизвестный язык';
+            document.getElementById('languageCode').textContent = `Код: ${data.language_code || '--'}`;
+            
+            // Флаг
+            const flag = flagEmojis[data.language_code?.toLowerCase()] || 
+                        flagEmojis[data.language?.toLowerCase()] || '🌐';
+            document.getElementById('languageFlag').textContent = flag;
+            
+            // Уверенность
+            const confidence = data.confidence || 0;
+            const confidencePercent = Math.round(confidence * 100);
+            document.getElementById('confidenceText').textContent = `${confidencePercent}%`;
+            
+            // Анимация заполнения шкалы
+            const confidenceFill = document.getElementById('confidenceFill');
+            confidenceFill.style.width = '0%';
+            setTimeout(() => {
+                confidenceFill.style.width = `${confidencePercent}%`;
+            }, 100);
+            
+            // Признаки текста
+            if (data.features) {
+                document.getElementById('textLength').textContent = data.features.text_length || 
+                    document.getElementById('textInput').value.length;
+                document.getElementById('wordCount').textContent = data.features.num_words || 
+                    document.getElementById('textInput').value.split(/\s+/).filter(w => w.length > 0).length;
+                document.getElementById('uniqueChars').textContent = data.features.num_unique_chars || 
+                    new Set(document.getElementById('textInput').value.toLowerCase()).size;
+            }
+        }
+        
+        // Автоматическое определение при нажатии Ctrl+Enter
+        document.getElementById('textInput').addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                detectLanguage();
+            }
+        });
+    </script>
+</body>
+</html>
